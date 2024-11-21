@@ -1,0 +1,9 @@
+name = "browser-aarush-ric"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+[vars]
+WORKER_NAME = "browser-aarush-ric"
+
+# Add your account ID and zone ID if needed
+# account_id = "your-account-id" 

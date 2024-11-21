@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dictionary Lookup</title>
+    <style>
+        :root {
+            --primary-color: #2c5282;
+            --secondary-color: #1a365d;
+            --background-color: #f8f9fa;
+            --card-background: #ffffff;
+            --text-color: #333333;
+            --border-color: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .search-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        #wordInput {
+            padding: 12px 20px;
+            font-size: 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            width: 300px;
+            transition: border-color 0.3s ease;
+        }
+
+        #wordInput:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        button {
+            padding: 12px 25px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .word-card {
+            background-color: var(--card-background);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .word-title {
+            font-size: 2em;
+            color: var(--secondary-color);
+            margin-bottom: 10px;
+        }
+
+        .phonetic {
+            color: #666;
+            font-style: italic;
+            margin-bottom: 15px;
+        }
+
+        .part-of-speech {
+            color: var(--primary-color);
+            font-weight: 600;
+            font-size: 1.2em;
+            margin: 15px 0 10px 0;
+            text-transform: capitalize;
+        }
+
+        .definitions {
+            list-style-type: none;
+        }
+
+        .definition-item {
+            margin: 10px 0;
+            padding-left: 20px;
+            border-left: 3px solid var(--border-color);
+        }
+
+        .example {
+            margin-top: 5px;
+            color: #666;
+            font-style: italic;
+        }
+
+        @media (max-width: 600px) {
+            .search-container {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            #wordInput {
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .container {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Dictionary Lookup</h1>
+        <div class="search-container">
+            <input 
+                type="text" 
+                id="wordInput" 
+                placeholder="Enter a word..."
+                autocomplete="off"
+            >
+            <button onclick="lookupWord()">Search</button>
+        </div>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        async function lookupWord() {
+            const word = document.getElementById('wordInput').value.trim();
+            if (!word) return;
+
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="word-card">Searching...</div>';
+
+            try {
+                const response = await fetch(`/api/${word}`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.innerHTML = formatDefinition(data);
+                } else {
+                    resultDiv.innerHTML = '<div class="word-card">Word not found</div>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<div class="word-card">Error fetching definition</div>';
+            }
+        }
+
+        function formatDefinition(data) {
+            if (!Array.isArray(data) || data.length === 0) {
+                return '<div class="word-card">No definition found</div>';
+            }
+
+            return data.map(entry => {
+                const phonetic = entry.phonetic 
+                    ? `<div class="phonetic">${entry.phonetic}</div>` 
+                    : '';
+                
+                const meanings = entry.meanings.map(meaning => {
+                    const definitions = meaning.definitions.map(def => {
+                        const example = def.example 
+                            ? `<div class="example">Example: "${def.example}"</div>` 
+                            : '';
+                        return `
+                            <li class="definition-item">
+                                ${def.definition}
+                                ${example}
+                            </li>`;
+                    }).join('');
+
+                    return `
+                        <div class="meaning">
+                            <div class="part-of-speech">${meaning.partOfSpeech}</div>
+                            <ul class="definitions">${definitions}</ul>
+                        </div>
+                    `;
+                }).join('');
+
+                return `
+                    <div class="word-card">
+                        <div class="word-title">${entry.word}</div>
+                        ${phonetic}
+                        ${meanings}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Add enter key support
+        document.getElementById('wordInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                lookupWord();
+            }
+        });
+    </script>
+</body>
+</html> 
